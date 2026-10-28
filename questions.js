@@ -1,5 +1,5 @@
 const N = s => String(s || '').toLowerCase().replace(/[^a-z]/g, '');
-const QUESTIONS = [
+const BASE = [
   { type: 'tf', topic: 'UX laws', q: "Jakob's Law: people expect your product to work like the ones they already use.", a: 0, fact: 'Users spend most of their time in other products. Lean on familiar patterns and save novelty for where it adds real value.' },
   { type: 'type', topic: 'UX laws', q: 'Name the law: the more options you offer, the longer people take to decide.', answer: "Hick's Law", accept: ['hick', 'hicks', 'hickslaw', 'hicklaw', 'hickhymanlaw'], wrongs: ["Fitts's law", 'Millers law', 'Jakob'], fact: 'Hick’s Law: decision time grows with the number of choices. Trim menus, group options and use progressive disclosure.' },
   { type: 'ab', topic: 'Color & accessibility', mock: 'contrast', q: 'Which sign-up card is easier to read?', a: 1, fact: 'B passes WCAG contrast. A’s pale grey on white fails — and low vision, bright sunlight and cheap projectors all make it worse.' },
@@ -21,11 +21,12 @@ const QUESTIONS = [
   { type: 'tf', topic: 'Famous products', q: 'The first iPhone launched without an App Store.', a: 0, fact: 'True. The iPhone launched in 2007; the App Store followed a year later with about 500 apps.' },
   { type: 'tf', topic: 'UX laws', double: true, q: "Miller's Law means menus should never have more than 7 items.", a: 1, fact: 'False. Miller’s “7±2” is about short-term memory, not a hard cap on menus. People scan menus — they don’t memorise them.' },
 ];
+const QUESTIONS = BASE.concat(require('./bank'));
 const DECKS = [
-  { id: 'ux', name: 'UX laws', sub: 'Laws, heuristics & bad UI', glyph: '7±2', color: '#0E7490', topics: ['UX laws', 'Spot the bad UI'] },
-  { id: 'visual', name: 'Color & type', sub: 'Contrast, hierarchy, type', glyph: 'Aa', color: '#C81E1E', topics: ['Visual design & typography', 'Color & accessibility'] },
-  { id: 'all', name: 'Everything', sub: 'The full 20-round run', glyph: '20', color: null, topics: null },
-  { id: 'research', name: 'Research', sub: 'Testing, personas & tokens', glyph: '5×', color: '#1E429F', topics: ['Research & testing', 'Design systems'] },
+  { id: 'ux', name: 'UX laws', sub: 'Laws, heuristics, motion & mobile', glyph: '7±2', color: '#0E7490', topics: ['UX laws', 'Spot the bad UI', 'Interaction & motion', 'Mobile & responsive'] },
+  { id: 'visual', name: 'Color & type', sub: 'Contrast, hierarchy, type, content', glyph: 'Aa', color: '#C81E1E', topics: ['Visual design & typography', 'Color & accessibility', 'Content & writing'] },
+  { id: 'all', name: 'Everything', sub: 'Every question, shuffled', glyph: '250', color: null, topics: null },
+  { id: 'research', name: 'Research', sub: 'Testing, IA, personas & tokens', glyph: '5×', color: '#1E429F', topics: ['Research & testing', 'Design systems', 'Info architecture'] },
   { id: 'trivia', name: 'Trivia', sub: 'Famous products & people', glyph: '2007', color: '#B45309', topics: ['Famous products'] },
 ];
 module.exports = { N, QUESTIONS, DECKS };

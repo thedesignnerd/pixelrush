@@ -36,11 +36,11 @@
   PR.TYPE_LABEL = { tf: 'True or false', ab: 'Pick the better design', type: 'Type the answer' };
   PR.ARC_COLORS = ['#0E7490', '#C81E1E', '#1E429F', '#B45309', '#057A55', '#BF125D', '#6C2BD9'];
   PR.DECKS = [
-    { id: 'ux', name: 'UX laws', sub: 'Laws, heuristics & bad UI', glyph: '7±2', color: '#0E7490', n: 7 },
-    { id: 'visual', name: 'Color & type', sub: 'Contrast, hierarchy, type', glyph: 'Aa', color: '#C81E1E', n: 8 },
-    { id: 'all', name: 'Everything', sub: 'The full 20-round run', glyph: '20', color: null, n: 20 },
-    { id: 'research', name: 'Research', sub: 'Testing, personas & tokens', glyph: '5×', color: '#1E429F', n: 5 },
-    { id: 'trivia', name: 'Trivia', sub: 'Famous products & people', glyph: '2007', color: '#B45309', n: 4 },
+    { id: 'ux', name: 'UX laws', sub: 'Laws, heuristics, motion & mobile', glyph: '7±2', color: '#0E7490', n: 83 },
+    { id: 'visual', name: 'Color & type', sub: 'Contrast, hierarchy, type, content', glyph: 'Aa', color: '#C81E1E', n: 71 },
+    { id: 'all', name: 'Everything', sub: 'Every question, shuffled', glyph: '250', color: null, n: 250 },
+    { id: 'research', name: 'Research', sub: 'Testing, IA, personas & tokens', glyph: '5×', color: '#1E429F', n: 60 },
+    { id: 'trivia', name: 'Trivia', sub: 'Famous products & people', glyph: '2007', color: '#B45309', n: 36 },
   ];
   PR.ACH = [
     { id: 'speed', name: 'Speed demon', hint: 'Avg under 4s when right', mark: '4s' },

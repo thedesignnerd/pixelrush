@@ -7,6 +7,7 @@
   const SAVE = SOLO ? 'pixelrush.live.solo' : 'pixelrush.live.host';
   let myName = ''; try { myName = localStorage.getItem('pixelrush.live.name') || ''; } catch (e) {}
   const PBK = 'pixelrush.live.best'; let newPB = false, prevPB = 0;
+  let qCount = 20; try { qCount = Number(localStorage.getItem('pixelrush.live.count')) || 20; } catch (e) {}
   let S = null, pin = null, token = null, conn, viewKey = '', seen = new Set(), deckSel = 'all', secs = 10, auto = false, sound = true;
   let timerRaf = 0, cdTimer = 0, anim = 0, tos = [];
   const later = (ms, fn) => tos.push(setTimeout(fn, ms));
@@ -80,7 +81,8 @@
     o.querySelector('#c-no').focus();
   }
   const topBar = () => {
-    const segs = Array.from({ length: S.total }, (_, k) => `<span style="background:${k < S.i ? 'var(--hot)' : k === S.i ? 'var(--ink)' : 'var(--track)'}"></span>`).join('');
+    const long = S.total > 30;
+    const segs = long ? `<span style="flex:1;height:8px;border-radius:4px;background:var(--track);overflow:hidden;min-width:0"><i style="display:block;height:100%;width:${(S.i + 1) / S.total * 100}%;background:var(--hot);border-radius:4px;transition:width 300ms"></i></span>` : Array.from({ length: S.total }, (_, k) => `<span style="background:${k < S.i ? 'var(--hot)' : k === S.i ? 'var(--ink)' : 'var(--track)'}"></span>`).join('');
     return `<div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap"><div class="segs">${segs}</div><div style="display:flex;align-items:center;gap:14px;font-size:14px;color:var(--ink2)"><span>Round <strong style="color:var(--ink)">${S.i + 1}</strong>/${S.total}</span>${SOLO ? `<span class="pr-chip poppins" style="font-size:14px;font-weight:700;color:var(--ink)">${PR.fmt(S.me.score)} pts</span><span class="pr-chip" style="font-size:14px;font-weight:600;color:var(--ink)">#${S.me.rank} of ${S.nPlayers}</span>${S.me.streak >= 2 ? `<span class="pr-chip" style="background:var(--hot);color:#fff;font-weight:700;font-size:14px">×${S.me.streak}</span>` : ''}` : `<span class="pr-chip" style="font-size:14px">${S.nLive}/${S.nPlayers} online</span>`}</div></div>`;
   };
 
@@ -90,9 +92,10 @@
     const selIdx = PR.DECKS.findIndex(d => d.id === deckSel), dark = PR.isDark();
     const decks = PR.DECKS.map((d, k) => {
       const o = k - 2, sel = k === selIdx, col = d.color || 'var(--hot2)';
-      return `<button class="deck" data-deck="${d.id}" role="radio" aria-checked="${sel}" style="background:${col};border-color:${sel ? 'var(--ink)' : 'transparent'};z-index:${sel ? 20 : 10 - Math.abs(o)};transform:translateY(${Math.abs(o) * 26 - (sel ? 22 : 0)}px) rotate(${o * 7}deg) scale(${sel ? 1.06 : 1 - Math.abs(o) * .04});box-shadow:${dark ? `0 24px 60px ${d.color || '#7E3AF2'}${sel ? '99' : '55'}` : `0 18px 40px rgba(8,40,59,${sel ? .28 : .16})`}"><span class="cnt">${d.n} rounds</span><span class="nm">${d.name}</span><span class="sub">${d.sub}</span><span class="gl">${d.glyph}</span></button>`;
+      return `<button class="deck" data-deck="${d.id}" role="radio" aria-checked="${sel}" style="background:${col};border-color:${sel ? 'var(--ink)' : 'transparent'};z-index:${sel ? 20 : 10 - Math.abs(o)};transform:translateY(${Math.abs(o) * 26 - (sel ? 22 : 0)}px) rotate(${o * 7}deg) scale(${sel ? 1.06 : 1 - Math.abs(o) * .04});box-shadow:${dark ? `0 24px 60px ${d.color || '#7E3AF2'}${sel ? '99' : '55'}` : `0 18px 40px rgba(8,40,59,${sel ? .28 : .16})`}"><span class="cnt">${d.n} questions</span><span class="nm">${d.name}</span><span class="sub">${d.sub}</span><span class="gl">${d.glyph}</span></button>`;
     }).join('');
-    const deckName = PR.DECKS[selIdx].name;
+    const deckName = PR.DECKS[selIdx].name, deckN = PR.DECKS[selIdx].n;
+    const presets = [...new Set([5, 10, 20, 30, 50, 100].filter(v => v < deckN).concat([deckN]))];
     stage.innerHTML = `<div style="position:relative;flex:1;display:flex;flex-direction:column;align-items:center;gap:clamp(18px,2.6vw,28px);text-align:center;padding-top:clamp(4px,2vw,20px)">
       <div class="pr-grid-bg"></div><div class="pr-glow"></div>
       <div style="position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:clamp(14px,2vw,20px);max-width:860px">
@@ -100,6 +103,9 @@
         <h1 style="font-size:clamp(40px,7vw,88px);line-height:1;letter-spacing:-.035em;font-weight:700;text-wrap:balance">Think fast.<br>Design <span style="color:var(--brand);font-style:italic">smarter.</span></h1>
         <p style="margin:0;font-size:clamp(15px,1.6vw,18px);line-height:1.55;color:var(--ink2);max-width:560px">${SOLO ? 'Pick a deck, answer fast, build streaks and climb the leaderboard against the bots.' : 'Pick a deck, project this screen, and let your team join from their phones. Speed scores, streaks stack.'}</p>
         <div style="display:flex;gap:18px;flex-wrap:wrap;justify-content:center;align-items:center;font-size:15px;color:var(--ink2)">
+          <label style="display:flex;align-items:center;gap:8px">Questions
+            <input type="number" id="s-count" min="1" max="${deckN}" value="${Math.min(qCount, deckN)}" inputmode="numeric" style="width:76px;height:36px;border-radius:8px;border:1px solid var(--line);background:var(--surface2);color:var(--ink);padding:0 8px;font-size:15px;text-align:center"></label>
+          <span id="s-presets" style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center">${presets.map(v => `<button type="button" class="pr-btn pr-btn-ghost pr-btn-sm" data-n="${v}" style="padding:0 12px">${v === deckN ? 'All ' + v : v}</button>`).join('')}</span>
           <label style="display:flex;align-items:center;gap:8px">Seconds per question
             <select id="s-secs" style="height:36px;border-radius:8px;border:1px solid var(--line);background:var(--surface2);color:var(--ink);padding:0 8px;font-size:15px">${[10, 20, 30].map(v => `<option ${v === secs ? 'selected' : ''}>${v}</option>`).join('')}</select></label>
           ${SOLO ? '' : `<label style="display:flex;align-items:center;gap:8px"><input type="checkbox" id="s-auto" ${auto ? 'checked' : ''} style="width:18px;height:18px"> Auto-advance screens</label>`}
@@ -114,14 +120,18 @@
       </div></div>`;
     stage.querySelectorAll('[data-deck]').forEach(b => b.onclick = () => { deckSel = b.dataset.deck; PR.sfx('blip'); setup(); });
     $('#s-secs').onchange = e => { secs = Number(e.target.value); };
+    const cInput = $('#s-count');
+    const setCount = v => { qCount = Math.max(1, Math.min(deckN, Math.floor(Number(v)) || 1)); cInput.value = qCount; try { localStorage.setItem('pixelrush.live.count', String(qCount)); } catch (e) {} };
+    cInput.onchange = () => setCount(cInput.value);
+    stage.querySelectorAll('[data-n]').forEach(b => b.onclick = () => setCount(b.dataset.n));
     const sa = $('#s-auto'); if (sa) sa.onchange = e => { auto = e.target.checked; };
     $('#s-create').onclick = () => {
       PR.sfx('join');
       if (SOLO) {
         myName = ($('#s-name').value || '').trim(); try { localStorage.setItem('pixelrush.live.name', myName); } catch (e) {}
         newPB = false; try { prevPB = Number(localStorage.getItem(PBK)) || 0; } catch (e) {}
-        conn.send({ t: 'solo:create', deck: deckSel, secs, name: myName });
-      } else conn.send({ t: 'host:create', deck: deckSel, secs, auto });
+        setCount(cInput.value); conn.send({ t: 'solo:create', deck: deckSel, secs, count: qCount, name: myName });
+      } else { setCount(cInput.value); conn.send({ t: 'host:create', deck: deckSel, secs, auto, count: qCount }); }
     };
     const nm = $('#s-name'); if (nm) nm.onkeydown = e => { if (e.key === 'Enter') $('#s-create').click(); };
   }
@@ -335,7 +345,7 @@
   // podium
   function soloSummary() {
     const me = S.me, ach = me.ach || {};
-    if (S.deck === 'all') { try { prevPB = prevPB || 0; const pb = Number(localStorage.getItem(PBK)) || 0; newPB = me.score > pb; if (newPB) localStorage.setItem(PBK, String(me.score)); prevPB = pb; } catch (e) {} } else newPB = false;
+    try { const key = PBK + '.' + S.deck + '.' + S.total, pb = Number(localStorage.getItem(key)) || 0; newPB = me.score > pb; if (newPB) localStorage.setItem(key, String(me.score)); prevPB = pb; } catch (e) { newPB = false; }
     return `<div id="p-solo" style="width:100%;display:none;flex-direction:column;gap:16px;text-align:left;padding-top:20px;border-top:1px solid var(--line);animation:pr-rise 400ms both">
       <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap"><div style="display:flex;flex-direction:column"><span style="font-size:13px;color:var(--eyebrow);font-weight:600;text-transform:uppercase;letter-spacing:.08em">You placed</span><span class="poppins" style="font-size:52px;font-weight:700;line-height:1">#${me.rank}</span></div>
       <span class="pr-chip poppins" style="font-weight:700;font-size:18px">${PR.fmt(me.score)} pts</span><span class="pr-chip">${me.correct}/${S.total} correct</span><span class="pr-chip">Best streak ×${me.best}</span>

@@ -23,7 +23,7 @@ const server = http.createServer((req, res) => {
   let p = decodeURIComponent(req.url.split('?')[0]);
   if (p === '/api/decks') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
-    return res.end(JSON.stringify(DECKS.map(d => ({ id: d.id, n: deckQuestions(d.id).length }))));
+    return res.end(JSON.stringify(DECKS.map(d => ({ id: d.id, n: deckPool(d.id).length }))));
   }
   p = ROUTES[p] || p.replace(/^\/+/, '');
   const file = path.normalize(path.join(PUBLIC, p));
@@ -42,11 +42,19 @@ const send = (ws, obj) => { if (ws && ws.readyState === 1) ws.send(JSON.stringif
 const newPin = () => { let p; do { p = String(Math.floor(100000 + Math.random() * 900000)); } while (rooms.has(p)); return p; };
 const cleanName = s => String(s || '').replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 16);
 
-function deckQuestions(deckId) {
+function deckPool(deckId) {
   const d = DECKS.find(x => x.id === deckId) || DECKS.find(x => x.id === 'all');
-  if (!d.topics) return QUESTIONS.map(q => ({ ...q }));
-  const qs = QUESTIONS.filter(q => d.topics.includes(q.topic)).map(q => ({ ...q }));
-  if (qs.length) qs[qs.length - 1].double = true;
+  return d.topics ? QUESTIONS.filter(q => d.topics.includes(q.topic)) : QUESTIONS;
+}
+// Random selection of `count` questions from the deck; the final round is always a double-points round.
+function deckQuestions(deckId, count) {
+  const pool = deckPool(deckId).map(q => ({ ...q, double: false }));
+  for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
+  const n = Math.max(1, Math.min(pool.length, Math.floor(Number(count)) || Math.min(20, pool.length)));
+  const qs = pool.slice(0, n);
+  // sprinkle in a double-points round roughly every 10 questions, plus the finale
+  for (let i = 9; i < qs.length - 1; i += 10) qs[i].double = true;
+  qs[qs.length - 1].double = true;
   return qs;
 }
 const points = (t, secs, streakBefore, dbl) => (Math.round(1000 * (1 - Math.min(1, t / secs) / 2)) + Math.min(500, streakBefore * 100)) * (dbl ? 2 : 1);
@@ -60,6 +68,7 @@ class Room {
     this.deck = DECKS.some(d => d.id === opts.deck) ? opts.deck : 'all';
     this.secsBase = [10, 20, 30].includes(Number(opts.secs)) ? Number(opts.secs) : 10;
     this.auto = !!opts.auto;
+    this.count = Number(opts.count) || 20;
     this.players = new Map();
     this.timers = [];
     this.touched = Date.now();
@@ -67,7 +76,7 @@ class Room {
   }
   resetGame() {
     this.clear();
-    this.qs = deckQuestions(this.deck);
+    this.qs = deckQuestions(this.deck, this.count);
     this.phase = 'lobby';
     this.i = 0;
     this.qStart = 0; this.qEnd = 0;
@@ -283,7 +292,7 @@ function handle(ws, m) {
       return room.broadcast();
     }
     case 'solo:create': {
-      const room = new Room({ deck: m.deck, secs: m.secs, auto: true });
+      const room = new Room({ deck: m.deck, secs: m.secs, count: m.count, auto: true });
       room.solo = true;
       const name = cleanName(m.name) || 'You';
       const mk = (id, nm, extra) => Object.assign({ id, token: uid(), name: nm, ws: null, joined: Date.now(), score: 0, prevScore: 0, streak: 0, best: 0, correct: 0, rank: 1, prevRank: 1, answer: null, gain: 0, ok: false, log: [] }, extra);
